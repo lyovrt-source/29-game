@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeMaLu 29 Game</title>
+    <style>
+        :root {
+            --card-question-color: #ff0000;
+            --panel-bg: #0f1a1a;
+            --accent-gold: #FFD700;
+        }
+        body { background-color: #000; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+        h1 { color: var(--accent-gold); margin: 5px 0; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        .sub-title { background: var(--accent-gold); color: black; padding: 2px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; display: inline-block; }
+        
+        #stats-section {
+            background: var(--panel-bg); border: 2px solid #222; border-radius: 20px;
+            width: 95%; max-width: 400px; margin: 20px auto 140px; padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #stats-section h3 { color: var(--accent-gold); margin: 0 0 10px; font-size: 16px; text-transform: uppercase; border-bottom: 1px solid #222; padding-bottom: 8px; }
+        .stats-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #1a2626; transition: 0.3s; }
+        .stats-left { display: flex; align-items: center; gap: 10px; color: #ccc; }
+        .stats-count { color: var(--accent-gold); font-weight: bold; font-size: 18px; }
+        .edit-stat-btn { background: none; border: none; cursor: pointer; opacity: 0.5; }
+
+        .card-q-btn {
+            background: #1a1a1a; color: var(--card-question-color); border: 1px solid #333;
+            padding: 2px 5px; border-radius: 4px; font-size: 12px; font-weight: bold;
+            font-style: italic; display: inline-block; transform: rotate(-5deg); pointer-events: none;
+        }
+
+        .minus-q-btn {
+            background: #1a1a1a; color: var(--card-question-color); border: 1px solid #333;
+            padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;
+            line-height: 1.1; display: inline-block; transform: rotate(-8deg); pointer-events: none;
+            white-space: pre-wrap; text-transform: uppercase;
+        }
+
+        .color-picker { margin: 15px 0; display: flex; justify-content: center; gap: 15px; }
+        .color-btn { font-size: 24px; cursor: pointer; background: none; border: none; transition: transform 0.2s; }
+        
+        .add-player-btn { background: var(--accent-gold); color: black; border: none; padding: 12px 25px; font-weight: bold; border-radius: 12px; cursor: pointer; margin: 15px 0; font-size: 16px; width: 90%; max-width: 400px; }
+        .shuffle-btn { background: #9c27b0; color: white; border: none; padding: 12px 25px; font-weight: bold; border-radius: 12px; cursor: pointer; margin: 15px 5px; font-size: 16px; width: 90%; max-width: 400px; }
+
+        #players-container { display: flex; flex-direction: column; align-items: center; width: 100%; padding-bottom: 120px; }
+
+        .player-row { 
+            background: #0d1414; margin: 15px auto; padding: 15px; 
+            border-radius: 25px; width: 95%; max-width: 385px; 
+            border: 1px solid #222; position: relative; box-sizing: border-box; transition: 0.4s;
+        }
+        
+        .player-row.stopped { border-color: #2196F3; }
+        .player-row.busted { border-color: #ff4d4d; background: #1a0a0a; }
+        .player-row.out { opacity: 0.2; filter: grayscale(1); pointer-events: none; }
+
+        .remove-player-btn { 
+            position: absolute; top: 10px; right: 10px; background: rgba(255,77,77,0.2); 
+            color: #ff4d4d; border: none; width: 25px; height: 25px; 
+            border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; z-index: 10;
+        }
+
+        .shuffle-player-cards-btn {
+            position: absolute; top: 10px; left: 10px; background: #222; 
+            color: white; border: none; width: 35px; height: 35px; 
+            border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; z-index: 10;
+        }
+
+        .player-name { 
+            width: 75%; background: white; border: none; border-radius: 10px; 
+            padding: 10px; text-align: center; font-weight: 900; 
+            color: #000; font-size: 18px; box-sizing: border-box; margin-bottom: 15px;
+        }
+
+        .cards-area { 
+            display: grid; grid-template-columns: repeat(5, 62px); grid-template-rows: repeat(2, 88px);
+            gap: 10px; justify-content: center; margin: 0 auto;
+        }
+
+        .card { 
+            width: 62px; height: 88px; background: #111; border-radius: 40px; 
+            display: flex; align-items: center; justify-content: center; 
+            border: 1px solid #333; cursor: pointer; position: relative; box-sizing: border-box;
+            transition: 0.3s;
+        }
+        .card.opened { background: transparent !important; border: 2px solid #E0C097 !important; font-size: 32px; font-weight: bold; color: white; }
+        .card.special-card { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); border-radius: 0; background: #1a1a1a; }
+        .card.selected-for-swap { border: 3px solid var(--accent-gold); transform: scale(1.1); z-index: 5; }
+        .card-index { position: absolute; bottom: 6px; font-size: 8px; color: #444; width: 100%; text-align: center; }
+
+        .action-container { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 15px; }
+        .action-sub-container { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+        
+        /* Stop Button Styles */
+        .stop-btn { 
+            background: #2196F3; color: white; border: none; padding: 12px 25px; 
+            border-radius: 12px; cursor: pointer; font-weight: bold; flex-grow: 1; transition: 0.3s; font-size: 16px;
+        }
+        
+        .stop-btn:disabled {
+            background: #333 !important;
+            color: #666 !important;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+            border: 1px solid #444;
+        }
+        
+        .remaining-numbers { font-size: 12px; color: #ffffff; letter-spacing: 4px; margin-top: 5px; padding-left: 10px; font-weight: bold; }
+        .remaining-numbers span.crossed { text-decoration: line-through; opacity: 0.2; }
+
+        .minus-card {
+            width: 55px; height: 75px; background: #111; border-radius: 35px; 
+            display: flex; align-items: center; justify-content: center; 
+            border: 2px solid #ff4d4d; cursor: pointer; flex-shrink: 0; position: relative;
+        }
+        .minus-card.opened { background: #ff4d4d !important; color: #000; font-weight: bold; border: none !important; font-size: 22px; }
+
+        .score-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; border-top: 1px solid #1a2626; padding-top: 10px; }
+        .undo-btn { background: #2196F3; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; }
+        .swap-player-btn { background: #333; color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; }
+        .swap-player-btn.active-swap { background: var(--accent-gold); color: black; box-shadow: 0 0 10px var(--accent-gold); }
+        .score-info { color: var(--accent-gold); font-weight: bold; font-size: 18px; flex-grow: 1; text-align: center; }
+
+        #winner-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
+        .winner-card { background: #111; border: 3px solid var(--accent-gold); padding: 20px; border-radius: 20px; text-align: center; width: 100%; max-width: 320px; box-shadow: 0 0 30px var(--accent-gold); overflow-y: auto; max-height: 90vh; }
+        
+        #shuffle-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 4000; flex-direction: column; justify-content: center; align-items: center; }
+        .progress-bar { width: 220px; height: 8px; background: #222; border-radius: 10px; margin-top: 15px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: var(--accent-gold); }
+
+        .controls { position: fixed; bottom: 0; left: 0; padding: 10px; display: flex; justify-content: center; gap: 8px; background: rgba(0,0,0,0.9); width: 100%; box-sizing: border-box; z-index: 1000; }
+        button.action-btn { border: none; padding: 10px; border-radius: 9px; cursor: pointer; font-weight: bold; color: white; flex: 1; font-size: 13px; }
+        .reset-btn { background: #ff4d4d; }
+        .calc-btn { background: #2196F3; }
+        .playoff-btn { background: var(--accent-gold); color: black; }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .shake-anim { animation: shake 0.4s ease-in-out; }
+        @keyframes fillProgress { from { width: 0%; } to { width: 100%; } }
+
+        .top-winners-list { margin-top: 15px; text-align: left; }
+        .top-winner-item { padding: 8px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; font-size: 16px; }
+        .top-winner-item:first-child { color: var(--accent-gold); font-size: 18px; font-weight: bold; }
+        .player-count-label { margin-top: 20px; font-size: 18px; color: #00d4ff; font-weight: bold; text-transform: uppercase; border-top: 1px dashed #444; padding-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="winner-overlay">
+        <div class="winner-card">
+            <div style="font-size: 35px;">🏆</div>
+            <div style="color: #FFD700; font-size: 20px; font-weight: bold;">ԼԱՎԱԳՈՒՅՆՆԵՐԸ</div>
+            <div id="top-winners-display" class="top-winners-list"></div>
+            <div id="total-players-in-game" class="player-count-label"></div>
+            <button class="close-winner-btn" style="background: #FFD700; color: black; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 20px; font-weight: bold; cursor: pointer; width: 100%;" onclick="document.getElementById('winner-overlay').style.display='none'">ՓԱԿԵԼ</button>
+        </div>
+    </div>
+
+    <div id="shuffle-overlay">
+        <div id="shuffle-text" style="color: #FFD700; font-size: 22px; font-weight: bold; letter-spacing: 2px;">ԽԱՌՆՎՈՒՄ ԵՆ...</div>
+        <div class="progress-bar"><div class="progress-fill" id="fill-bar"></div></div>
+    </div>
+
+    <h1>LeMaLu</h1>
+    <div class="sub-title">Tiktok LyovT</div>
+
+    <div class="color-picker">
+        <button class="color-btn" onclick="changeQColor('#FFD700')">🟡</button>
+        <button class="color-btn" onclick="changeQColor('#9c27b0')">🟣</button>
+        <button class="color-btn" onclick="changeQColor('#00d4ff')">🔵</button>
+        <button class="color-btn" onclick="changeQColor('#00c853')">🟢</button>
+        <button class="color-btn" onclick="changeQColor('#ffffff')">⚪</button>
+    </div>
+    
+    <button class="shuffle-btn" onclick="startShuffleAnimation('ALL')">🔀 Խառնել խաղացողներին</button>
+    <br>
+    <button class="add-player-btn" onclick="addPlayer()">+ Ավելացնել Խաղացող</button>
+
+    <div id="players-container"></div>
+
+    <div id="stats-section">
+        <h3>📊 29 ՄԻԱՎՈՐԻ ՎԱՐՊԵՏՆԵՐ</h3>
+        <div id="stats-list-container">
+            <div style="color: #666; font-size: 12px;">Դեռ ոչ ոք 29 չի հավաքել...</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="action-btn playoff-btn" onclick="startShuffleAnimation('PLAYOFF')">🏆 Փլեյ-օֆֆ</button>
+        <button class="action-btn reset-btn" onclick="resetRound()">🔄 Նոր ռաունդ</button>
+        <button class="action-btn calc-btn" onclick="findWinner()">🏆 Հաղթողը</button>
+    </div>
+
+<script>
+    let winStats = JSON.parse(localStorage.getItem('leMaLuStats')) || {};
+    let swapState = { step: 0, initiatorRow: null, initiatorCard: null };
+    const armenianNumbers = ["", "մեկ", "երկու", "երեք", "չորս", "հինգ", "վեց", "յոթ", "ութ", "ինը", "տասը"];
+
+    function saveStats() { localStorage.setItem('leMaLuStats', JSON.stringify(winStats)); }
+
+    function renderStats() {
+        const container = document.getElementById('stats-list-container');
+        container.innerHTML = '';
+        const entries = Object.entries(winStats);
+        if (entries.length === 0) {
+            container.innerHTML = '<div style="color: #666; font-size: 12px;">Դեռ ոչ ոք 29 չի հավաքել...</div>';
+            return;
+        }
+        entries.sort((a,b) => b[1] - a[1]).forEach(([name, count]) => {
+            const div = document.createElement('div');
+            div.className = 'stats-item';
+            div.innerHTML = `<div class="stats-left"><button class="edit-stat-btn" onclick="editStat('${name}')">⚙️</button><span>${name}</span></div><span class="stats-count">${count}</span>`;
+            container.appendChild(div);
+        });
+    }
+
+    function editStat(oldName) {
+        const newName = prompt("Փոխել անունը:", oldName);
+        if (newName === null) return;
+        const count = winStats[oldName];
+        delete winStats[oldName];
+        if (newName.trim() !== "") {
+            const newCount = prompt("Փոխել հաղթանակների թիվը:", count);
+            if (newCount !== null) winStats[newName.trim()] = parseInt(newCount);
+        }
+        saveStats(); renderStats();
+    }
+
+    function changeQColor(color) { document.documentElement.style.setProperty('--card-question-color', color); }
+
+    function generatePlayerCards() {
+        let pool = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        pool.push(Math.floor(Math.random() * 9) + 1);
+        return pool;
+    }
+
+    function createCard(index, value) {
+        const card = document.createElement('div');
+        card.className = 'card closed';
+        if (index === 10) card.classList.add('special-card');
+        card.dataset.value = value;
+        card.dataset.index = index;
+        card.dataset.clicks = 0;
+        
+        const qBtn = document.createElement('div');
+        qBtn.className = 'card-q-btn';
+        qBtn.innerText = armenianNumbers[index];
+        card.appendChild(qBtn);
+
+        const idxSpan = document.createElement('span');
+        idxSpan.className = 'card-index';
+        idxSpan.innerText = index;
+        card.appendChild(idxSpan);
+        
+        card.onclick = function() {
+            const row = this.closest('.player-row');
+            if (swapState.step === 1 && row === swapState.initiatorRow && this.classList.contains('closed')) {
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('selected-for-swap'));
+                this.classList.add('selected-for-swap');
+                swapState.initiatorCard = this;
+                swapState.step = 2; return;
+            }
+            if (swapState.step === 3 && row !== swapState.initiatorRow && this.classList.contains('closed')) {
+                const temp = this.dataset.value;
+                this.dataset.value = swapState.initiatorCard.dataset.value;
+                swapState.initiatorCard.dataset.value = temp;
+                alert("Թվերը տեղերով փոխվեցին։"); resetSwap(); return;
+            }
+            if (this.classList.contains('opened') || row.classList.contains('stopped') || row.classList.contains('out')) return;
+            if (!row.classList.contains('busted')) {
+                row.querySelectorAll('.card, .minus-card').forEach(c => c.classList.remove('last-action'));
+                this.classList.add('last-action');
+                this.classList.remove('closed');
+                this.classList.add('opened');
+                this.innerHTML = this.dataset.value;
+                this.appendChild(idxSpan);
+                updateScores(row);
+            } else {
+                let clicks = parseInt(this.dataset.clicks) + 1;
+                this.dataset.clicks = clicks;
+                if (clicks >= 5) {
+                    this.classList.remove('closed'); this.classList.add('opened');
+                    this.innerHTML = this.dataset.value; this.appendChild(idxSpan);
+                }
+            }
+        };
+        return card;
+    }
+
+    function createMinusCard() {
+        const card = document.createElement('div');
+        card.className = 'minus-card closed';
+        card.dataset.value = -(Math.floor(Math.random() * 9) + 1);
+        card.dataset.clicks = 0;
+        const mBtn = document.createElement('div');
+        mBtn.className = 'minus-q-btn';
+        mBtn.innerText = "մ\nի\nն\nու\nս";
+        card.appendChild(mBtn);
+
+        card.onclick = function() {
+            const row = this.closest('.player-row');
+            if (this.classList.contains('opened') || row.classList.contains('stopped') || row.classList.contains('out')) return;
+            if (!row.classList.contains('busted')) {
+                row.querySelectorAll('.card, .minus-card').forEach(c => c.classList.remove('last-action'));
+                this.classList.add('last-action');
+                this.classList.remove('closed');
+                this.classList.add('opened');
+                this.innerText = this.dataset.value;
+                updateScores(row);
+            } else {
+                let clicks = parseInt(this.dataset.clicks) + 1;
+                this.dataset.clicks = clicks;
+                if (clicks >= 5) {
+                    this.classList.remove('closed'); this.classList.add('opened');
+                    this.innerText = this.dataset.value;
+                }
+            }
+        };
+        return card;
+    }
+
+    function resetSwap() {
+        swapState = { step: 0, initiatorRow: null, initiatorCard: null };
+        document.querySelectorAll('.swap-player-btn').forEach(b => b.classList.remove('active-swap'));
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('selected-for-swap'));
+    }
+
+    function handleSwapClick(btn) {
+        const row = btn.closest('.player-row');
+        if (swapState.step === 0) { swapState.step = 1; swapState.initiatorRow = row; btn.classList.add('active-swap'); }
+        else if (swapState.step === 2 && row !== swapState.initiatorRow) { swapState.step = 3; btn.classList.add('active-swap'); }
+        else resetSwap();
+    }
+
+    function undoLastMove(btn) {
+        const row = btn.closest('.player-row');
+        const lastCard = row.querySelector('.opened.last-action');
+        if (!lastCard || row.classList.contains('stopped') || row.classList.contains('out')) return;
+        const area = row.querySelector('.cards-area');
+        area.classList.remove('shake-anim'); void area.offsetWidth; area.classList.add('shake-anim');
+        lastCard.classList.remove('opened', 'last-action');
+        lastCard.classList.add('closed');
+        lastCard.innerHTML = '';
+        lastCard.dataset.clicks = 0;
+        if (lastCard.classList.contains('card')) {
+            const idx = lastCard.dataset.index;
+            const qBtn = document.createElement('div'); qBtn.className = 'card-q-btn'; qBtn.innerText = armenianNumbers[idx]; lastCard.appendChild(qBtn);
+            const idxSpan = document.createElement('span'); idxSpan.className = 'card-index'; idxSpan.innerText = idx; lastCard.appendChild(idxSpan);
+        } else {
+            const mBtn = document.createElement('div'); mBtn.className = 'minus-q-btn'; mBtn.innerText = "մ\nի\nն\nու\nս"; lastCard.appendChild(mBtn);
+        }
+        const closedCards = row.querySelectorAll('.card.closed');
+        if (closedCards.length > 0) {
+            const openedValues = Array.from(row.querySelectorAll('.card.opened')).map(c => parseInt(c.dataset.value));
+            let pool = [1, 2, 3, 4, 5, 6, 7, 8, 9, Math.floor(Math.random() * 9) + 1];
+            openedValues.forEach(v => { const i = pool.indexOf(v); if (i > -1) pool.splice(i, 1); });
+            for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+            closedCards.forEach((c, i) => { if (pool[i] !== undefined) c.dataset.value = pool[i]; });
+        }
+        btn.disabled = true;
+        row.classList.remove('busted');
+        row.querySelector('.stop-btn').disabled = false;
+        row.querySelector('.remaining-numbers').style.display = "block";
+        updateScores(div);
+    }
+
+    function shuffleSpecificPlayerCards(btn) {
+        const row = btn.closest('.player-row');
+        if (row.classList.contains('out')) return;
+        const area = row.querySelector('.cards-area');
+        area.innerHTML = '';
+        const cardValues = generatePlayerCards();
+        for (let i = 0; i < 10; i++) area.appendChild(createCard(i + 1, cardValues[i]));
+        const minusHolder = row.querySelector('.minus-card-holder');
+        minusHolder.innerHTML = ''; minusHolder.appendChild(createMinusCard());
+        row.classList.remove('busted', 'stopped');
+        row.querySelector('.stop-btn').disabled = false;
+        row.querySelector('.remaining-numbers').style.display = "block";
+        initRemainingNumbers(row); updateScores(row);
+    }
+
+    function initRemainingNumbers(row) {
+        row.querySelector('.remaining-numbers').innerHTML = '<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>';
+    }
+
+    function addPlayer() {
+        const container = document.getElementById('players-container');
+        const count = container.children.length + 1;
+        const div = document.createElement('div');
+        div.className = 'player-row';
+        div.innerHTML = `
+            <button class="remove-player-btn" onclick="removePlayer(this)">×</button>
+            <button class="shuffle-player-cards-btn" onclick="shuffleSpecificPlayerCards(this)">✋🏻</button>
+            <input type="text" class="player-name" value="Խաղացող ${count}" onfocus="if(this.value.includes('Խաղացող'))this.value=''">
+            <div class="cards-area"></div>
+            <div class="action-container">
+                <div class="action-sub-container">
+                    <div class="minus-card-holder"></div>
+                    <button class="stop-btn" onclick="stopPlayer(this)">STOP</button>
+                </div>
+                <div class="remaining-numbers"></div>
+            </div>
+            <div class="score-row">
+                <button class="undo-btn" onclick="undoLastMove(this)">↩</button>
+                <div class="score-info">Ընդհանուր՝ <span class="score">0</span> / 29</div>
+                <button class="swap-player-btn" onclick="handleSwapClick(this)">🔃</button>
+            </div>
+        `;
+        const area = div.querySelector('.cards-area');
+        const vals = generatePlayerCards();
+        for (let i = 0; i < 10; i++) area.appendChild(createCard(i + 1, vals[i]));
+        div.querySelector('.minus-card-holder').appendChild(createMinusCard());
+        container.prepend(div); initRemainingNumbers(div); updateScores(div);
+    }
+
+    function startShuffleAnimation(mode) {
+        const overlay = document.getElementById('shuffle-overlay');
+        const fill = document.getElementById('fill-bar');
+        const txt = document.getElementById('shuffle-text');
+        txt.innerText = mode === 'PLAYOFF' ? "🏆 ՓԼԵՅ-ՕՖՖ..." : "ԽԱՌՆՎՈՒՄ ԵՆ... ";
+        overlay.style.display = 'flex';
+        fill.style.animation = 'none';
+        void fill.offsetWidth;
+        fill.style.animation = 'fillProgress 2.5s linear forwards';
+        setTimeout(() => {
+            if (mode === 'PLAYOFF') playOffLogic(); else shuffleLogic();
+            overlay.style.display = 'none';
+        }, 2500);
+    }
+
+    function shuffleLogic() {
+        const container = document.getElementById('players-container');
+        let players = Array.from(container.children);
+        if (players.length < 2) return;
+
+        // Հիշում ենք հին հերթականությունը
+        const oldOrder = players.map(p => p.querySelector('.player-name').value);
+        let shuffled;
+        let attempts = 0;
+
+        // Փորձում ենք այնքան, մինչև հերթականությունը իսկապես փոխվի
+        do {
+            shuffled = [...players].sort(() => Math.random() - 0.5);
+            
+            // Smart rearrangement նույն անունների համար
+            let result = [];
+            let remaining = [...shuffled];
+            while (remaining.length > 0) {
+                let found = false;
+                for (let i = 0; i < remaining.length; i++) {
+                    let currentName = remaining[i].querySelector('.player-name').value.trim();
+                    let lastAddedName = result.length > 0 ? result[result.length - 1].querySelector('.player-name').value.trim() : null;
+                    if (currentName !== lastAddedName) {
+                        result.push(remaining.splice(i, 1)[0]);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) { result.push(...remaining); break; }
+            }
+            shuffled = result;
+            attempts++;
+            
+            // Ստուգում ենք՝ արդյոք նոր հերթականությունը տարբերվում է հնից
+            var newOrder = shuffled.map(p => p.querySelector('.player-name').value);
+        } while (JSON.stringify(oldOrder) === JSON.stringify(newOrder) && attempts < 10);
+
+        container.innerHTML = '';
+        shuffled.forEach(p => container.appendChild(p));
+    }
+
+    function playOffLogic() {
+        const container = document.getElementById('players-container');
+        const allRows = Array.from(container.querySelectorAll('.player-row'));
+        const activeRows = allRows.filter(p => !p.classList.contains('out'));
+        
+        let max = -1;
+        activeRows.forEach(p => {
+            let s = parseInt(p.querySelector('.score').innerText);
+            if(!p.classList.contains('busted') && s <= 29 && s > max) max = s;
+        });
+
+        if(max === -1) { alert("Ոչ ոք միավոր չունի:"); return; }
+        
+        const winners = activeRows.filter(p => !p.classList.contains('busted') && parseInt(p.querySelector('.score').innerText) === max);
+        
+        if (winners.length < 2) { 
+            alert("Փլեյ-օֆֆի համար անհրաժեշտ է առնվազն 2 հավասար լավագույն միավոր:"); 
+            return; 
+        }
+
+        const losers = allRows.filter(p => !winners.includes(p));
+
+        losers.forEach(p => {
+            p.classList.add('out');
+            const sRow = p.querySelector('.score-row');
+            if (sRow) sRow.innerHTML = '<div class="score-info">❌ ԴՈՒՐՍ ՄՆԱՑ</div>';
+        });
+
+        // Խառնում ենք հաղթողներին
+        winners.sort(() => Math.random() - 0.5);
+
+        winners.forEach(p => {
+            p.classList.remove('stopped', 'busted', 'out');
+            const sRow = p.querySelector('.score-row');
+            if (sRow) {
+                sRow.innerHTML = `
+                    <button class="undo-btn" onclick="undoLastMove(this)">↩</button>
+                    <div class="score-info">Ընդհանուր՝ <span class="score">0</span> / 29</div>
+                    <button class="swap-player-btn" onclick="handleSwapClick(this)">🔃</button>
+                `;
+            }
+            const stopBtn = p.querySelector('.stop-btn');
+            if(stopBtn) stopBtn.disabled = false;
+            shuffleSpecificPlayerCards(p.querySelector('.shuffle-player-cards-btn'));
+        });
+
+        container.innerHTML = '';
+        winners.forEach(p => container.appendChild(p));
+        losers.forEach(p => container.appendChild(p));
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function stopPlayer(btn) { 
+        const row = btn.closest('.player-row');
+        row.classList.add('stopped'); 
+        btn.disabled = true; // Այստեղ կոճակը դառնում է "սառած"
+        
+        const name = row.querySelector('.player-name').value.trim();
+        const scoreVal = parseInt(row.querySelector('.score').innerText);
+        row.querySelector('.score-info').innerHTML = `<span style="color:white">${name} </span><span style="color:#00c853">${scoreVal}</span> <span style="color:white">միավոր</span><span class="score" style="display:none">${scoreVal}</span>`;
+        row.querySelector('.remaining-numbers').style.display = "none";
+        row.querySelector('.undo-btn').disabled = true;
+        if (scoreVal === 29) { winStats[name] = (winStats[name] || 0) + 1; saveStats(); renderStats(); }
+    }
+
+    function updateScores(row) {
+        let sum = 0; const opened = [];
+        row.querySelectorAll('.card.opened, .minus-card.opened').forEach(c => {
+            let v = parseInt(c.dataset.value); sum += v;
+            if(v > 0 && c.dataset.index !== "10") opened.push(v.toString());
+        });
+        const scoreSpan = row.querySelector('.score'); if(scoreSpan) scoreSpan.innerText = sum;
+        const info = row.querySelector('.score-info');
+        if (sum > 29) {
+            row.classList.add('busted'); row.querySelector('.stop-btn').disabled = true;
+            info.style.color = '#ff4d4d'; info.innerHTML = "❌ ՊԱՐՏՈՒԹՅՈՒՆ " + sum + "/29 <span class='score' style='display:none'>"+sum+"</span>";
+            row.querySelector('.remaining-numbers').style.display = "none";
+        } else {
+            info.style.color = 'var(--accent-gold)'; info.innerHTML = `Ընդհանուր՝ <span class="score">${sum}</span> / 29`;
+            row.querySelectorAll('.remaining-numbers span').forEach(s => s.className = opened.includes(s.innerText) ? 'crossed' : '');
+        }
+    }
+
+    function findWinner() {
+        const allPlayers = Array.from(document.querySelectorAll('.player-row'));
+        const activePlayers = allPlayers.filter(p => !p.classList.contains('out'))
+            .map(p => ({ 
+                name: p.querySelector('.player-name').value, 
+                score: parseInt(p.querySelector('.score').innerText), 
+                busted: p.classList.contains('busted') 
+            }))
+            .filter(p => !p.busted)
+            .sort((a,b) => b.score - a.score);
+
+        const displayContainer = document.getElementById('top-winners-display');
+        displayContainer.innerHTML = '';
+
+        if(activePlayers.length > 0) {
+            const top3 = activePlayers.slice(0, 3);
+            top3.forEach((p, index) => {
+                const div = document.createElement('div');
+                div.className = 'top-winner-item';
+                div.innerHTML = `<span>${index + 1}. ${p.name}</span> <span>${p.score} միավոր</span>`;
+                displayContainer.appendChild(div);
+            });
+            document.getElementById('total-players-in-game').innerText = `ԽԱՂԻ ՄԵՋ ԷԻՆ՝ ${allPlayers.length} ՀՈԳԻ`;
+            document.getElementById('winner-overlay').style.display = 'flex';
+        } else {
+            alert("Հաղթող չկա (բոլորը պարտվել են կամ խաղացող չկա)");
+        }
+    }
+
+    function resetRound() {
+        document.querySelectorAll('.player-row').forEach(p => {
+            p.classList.remove('busted', 'stopped', 'out');
+            const sRow = p.querySelector('.score-row');
+            if(sRow) {
+                sRow.innerHTML = `<button class="undo-btn" onclick="undoLastMove(this)">↩</button><div class="score-info">Ընդհանուր՝ <span class="score">0</span> / 29</div><button class="swap-player-btn" onclick="handleSwapClick(this)">🔃</button>`;
+            }
+            shuffleSpecificPlayerCards(p.querySelector('.shuffle-player-cards-btn'));
+        });
+        resetSwap();
+    }
+
+    function removePlayer(btn) { btn.closest('.player-row').remove(); }
+    renderStats(); addPlayer(); addPlayer();
+</script>
+</body>
+</html>
