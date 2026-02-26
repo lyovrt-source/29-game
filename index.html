@@ -14,6 +14,24 @@
         h1 { color: var(--accent-gold); margin: 5px 0; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
         .sub-title { background: var(--accent-gold); color: black; padding: 2px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; display: inline-block; }
         
+        /* Educational Overlay Styles */
+        #edu-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 5000; justify-content: center; align-items: center;
+            padding: 20px; box-sizing: border-box;
+        }
+        .edu-card {
+            background: #111; border: 2px solid var(--accent-gold); padding: 25px;
+            border-radius: 20px; width: 100%; max-width: 350px; text-align: center;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+        .edu-hy { color: var(--accent-gold); font-size: 19px; font-weight: bold; margin-bottom: 15px; line-height: 1.4; }
+        .edu-en { color: #aaa; font-size: 15px; font-style: italic; border-top: 1px solid #333; padding-top: 15px; line-height: 1.4; }
+        .edu-close-btn {
+            background: var(--accent-gold); color: black; border: none; padding: 12px;
+            border-radius: 10px; margin-top: 25px; font-weight: bold; cursor: pointer; width: 100%;
+        }
+
         #stats-section {
             background: var(--panel-bg); border: 2px solid #222; border-radius: 20px;
             width: 95%; max-width: 400px; margin: 20px auto 140px; padding: 15px;
@@ -93,7 +111,6 @@
         .action-container { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 15px; }
         .action-sub-container { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
         
-        /* Stop Button Styles */
         .stop-btn { 
             background: #2196F3; color: white; border: none; padding: 12px 25px; 
             border-radius: 12px; cursor: pointer; font-weight: bold; flex-grow: 1; transition: 0.3s; font-size: 16px;
@@ -148,6 +165,15 @@
     </style>
 </head>
 <body>
+
+    <div id="edu-overlay">
+        <div class="edu-card">
+            <div id="edu-hy-text" class="edu-hy"></div>
+            <div id="edu-en-text" class="edu-en"></div>
+            <button class="edu-close-btn" onclick="document.getElementById('edu-overlay').style.display='none'">ԼԱՎ (OK)</button>
+        </div>
+    </div>
+
     <div id="winner-overlay">
         <div class="winner-card">
             <div style="font-size: 35px;">🏆</div>
@@ -194,6 +220,109 @@
     </div>
 
 <script>
+    const eduFacts = [
+        { hy: "Մեղրը միակ սննդամթերքն է, որը երբեք չի փչանում:", en: "Honey is the only food that never expires." },
+        { hy: "Ութոտնուկներն ունեն երեք սիրտ:", en: "Octopuses have three hearts." },
+        { hy: "Շնաձկները գոյություն ունեն ավելի երկար, քան ծառերը:", en: "Sharks have existed longer than trees." },
+        { hy: "Վեներայի վրա մեկ օրն ավելի երկար է, քան մեկ տարին:", en: "A day on Venus is longer than a year on Venus." },
+        { hy: "Մարդու ոսկորներն ավելի ամուր են, քան պողպատը:", en: "Human bones are stronger than steel." },
+        { hy: "Բանանը հատապտուղ է, իսկ ելակը՝ ոչ:", en: "Bananas are berries, but strawberries are not." },
+        { hy: "Մրջյունները երբեք չեն քնում:", en: "Ants never sleep." },
+        { hy: "Կոալաները օրական քնում են մինչև 22 ժամ:", en: "Koalas sleep up to 22 hours a day." },
+        { hy: "Արևը կազմում է արեգակնային համակարգի զանգվածի 99.8%-ը:", en: "The Sun makes up 99.8% of the solar system's mass." },
+        { hy: "Հայաստանը առաջին երկիրն է, որն ընդունել է քրիստոնեությունը:", en: "Armenia is the first country to adopt Christianity." },
+        { hy: "Մարդու լեզուն ունի եզակի հետք, ինչպես մատնահետքը:", en: "A human tongue has a unique print, just like a fingerprint." },
+        { hy: "Էյֆելյան աշտարակն ամռանը կարող է բարձրանալ 15 սմ-ով:", en: "The Eiffel Tower can grow by 15 cm during the summer." },
+        { hy: "Կապույտ կետի լեզուն կշռում է այնքան, որքան մի ամբողջ փիղ:", en: "A blue whale's tongue weighs as much as a whole elephant." },
+        { hy: "Տիեզերքում հնարավոր չէ լաց լինել, քանի որ արցունքները չեն հոսում:", en: "You can't cry in space because tears won't fall." },
+        { hy: "Ծովաձիուկները միակ ձկներն են, որոնք լողում են ուղղահայաց:", en: "Seahorses are the only fish that swim upright." },
+        { hy: "Թեյն աշխարհում ամենաշատ սպառվող ըմպելիքն է ջրից հետո:", en: "Tea is the most consumed drink in the world after water." },
+        { hy: "Ամեն վայրկյան աշխարհում 4 երեխա է ծնվում:", en: "Every second, 4 babies are born in the world." },
+        { hy: "Շվեյցարիայում անօրինական է միայն մեկ ծովախոզուկ պահելը:", en: "In Switzerland, it's illegal to own just one guinea pig." },
+        { hy: "Մարդու աչքը կարող է տարբերել 10 միլիոն գույն:", en: "The human eye can distinguish 10 million colors." },
+        { hy: "Կրակը ստվեր չունի:", en: "Fire does not have a shadow." },
+        { hy: "Միջին ամպը կշռում է մոտ 500,000 կիլոգրամ:", en: "The average cloud weighs about 500,000 kilograms." },
+        { hy: "Աշխարհի ամենահին համալսարանը գտնվում է Մարոկկոյում:", en: "The world's oldest university is located in Morocco." },
+        { hy: "Ալբերտ Էյնշտեյնը երբեք չի սովորել վարել:", en: "Albert Einstein never learned how to drive." },
+        { hy: "Կատուները չեն զգում քաղցր համը:", en: "Cats cannot taste sweetness." },
+        { hy: "Միակ տառը, որը չկա քիմիական աղյուսակում, J-ն է:", en: "The only letter not in the periodic table is J." },
+        { hy: "Օվկիանոսների 95%-ը դեռևս չբացահայտված է մնում:", en: "95% of the oceans remain unexplored." },
+        { hy: "Ուղտերը կարող են խմել 100 լիտր ջուր 10 րոպեում:", en: "Camels can drink 100 liters of water in 10 minutes." },
+        { hy: "Մարդու մարմնի ոսկորների քառորդ մասը գտնվում է ոտքերում:", en: "A quarter of the bones in a human body are in the feet." },
+        { hy: "Պանդաները օրական ուտում են 12-ից 38 կգ բամբուկ:", en: "Pandas eat 12 to 38 kg of bamboo every day." },
+        { hy: "Ձեր քիթը կարող է հիշել 50,000 տարբեր բույրեր:", en: "Your nose can remember 50,000 different scents." },
+        { hy: "Տուրիզմի համար ամենաշատ այցելվող երկիրը Ֆրանսիան է:", en: "France is the most visited country for tourism." },
+        { hy: "Յուպիտերը 2.5 անգամ ավելի մեծ է, քան մյուս բոլոր մոլորակները միասին:", en: "Jupiter is 2.5 times larger than all other planets combined." },
+        { hy: "Մարդու սիրտը օրական բաբախում է մոտ 100,000 անգամ:", en: "The human heart beats about 100,000 times a day." },
+        { hy: "Առաջին համակարգչային մկնիկը պատրաստված էր փայտից:", en: "The first computer mouse was made of wood." },
+        { hy: "Լեոնարդո դա Վինչին կարող էր գրել մի ձեռքով և նկարել մյուսով:", en: "Leonardo da Vinci could write with one hand and draw with the other." },
+        { hy: "Մարսի վրա մայրամուտը կապույտ է:", en: "Sunsets on Mars are blue." },
+        { hy: "Ամենաերկար տևած փոթորիկը Յուպիտերի վրա է (300 տարի):", en: "The longest-lasting storm is on Jupiter (300 years)." },
+        { hy: "Կալիֆոռնիայում կա մի ծառ, որն ավելի քան 4800 տարեկան է:", en: "There is a tree in California that is over 4,800 years old." },
+        { hy: "Մարգարիտները հալվում են քացախի մեջ:", en: "Pearls melt in vinegar." },
+        { hy: "Միջինում մարդը կյանքի ընթացքում քայլում է աշխարհի շուրջ 3 անգամ:", en: "The average person walks the equivalent of 3 times around the world." },
+        { hy: "Հնդկաստանն աշխարհում ամենաշատ բնակչություն ունեցող երկիրն է:", en: "India is the most populous country in the world." },
+        { hy: "Ադամանդը բնության մեջ հանդիպող ամենակարծր նյութն է:", en: "Diamond is the hardest natural substance." },
+        { hy: "Մարդու մազերը տարեկան աճում են մոտ 15 սանտիմետր:", en: "Human hair grows about 15 centimeters per year." },
+        { hy: "Օլիմպիական ոսկե մեդալները հիմնականում արծաթից են:", en: "Olympic gold medals are mostly made of silver." },
+        { hy: "Կոլիբրին միակ թռչունն է, որը կարող է թռչել հետընթաց:", en: "The hummingbird is the only bird that can fly backwards." },
+        { hy: "Դելֆինները քնում են մեկ աչքը բաց:", en: "Dolphins sleep with one eye open." },
+        { hy: "Շոկոլադը նախկինում օգտագործվել է որպես արժույթ:", en: "Chocolate was once used as currency." },
+        { hy: "Մարդիկ և շիմպանզեները կիսում են ԴՆԹ-ի 98.8%-ը:", en: "Humans and chimpanzees share 98.8% of their DNA." },
+        { hy: "Լուսինը ամեն տարի 3.8 սմ-ով հեռանում է Երկրից:", en: "The Moon moves 3.8 cm away from the Earth every year." },
+        { hy: "Թվիթերի թռչնակի անունը Լարի է:", en: "The Twitter bird's name is Larry." },
+        { hy: "Անձրևի կաթիլները իրականում բուրգի տեսք ունեն, ոչ թե արցունքի:", en: "Raindrops look more like hamburger buns than tears." },
+        { hy: "Միջինում մարդն օրական ծիծաղում է 15 անգամ:", en: "The average person laughs 15 times a day." },
+        { hy: "Սառույցը ավելի խիտ է, քան ջուրը, դրա համար այն լողում է:", en: "Ice is less dense than water, which is why it floats." },
+        { hy: "Վատիկանը աշխարհի ամենափոքր երկիրն է:", en: "Vatican City is the smallest country in the world." },
+        { hy: "Կոկորդիլոսները չեն կարող հանել իրենց լեզուն:", en: "Crocodiles cannot stick their tongue out." },
+        { hy: "Մարդը չի կարող ինքն իրեն կիթ տալ:", en: "A person cannot tickle themselves." },
+        { hy: "Էլեկտրական օրորը կարող է 600 վոլտ հոսանք արտադրել:", en: "An electric eel can generate 600 volts of electricity." },
+        { hy: "Առաջին տեքստային հաղորդագրությունը ուղարկվել է 1992-ին:", en: "The first text message was sent in 1992." },
+        { hy: "Կաթնասունների մեջ միայն մարդն ու դելֆինն են հաճույքի համար սեքսով զբաղվում:", en: "Only humans and dolphins have sex for pleasure." },
+        { hy: "Արգենտինան անվանվել է արծաթի պատվին:", en: "Argentina is named after the element silver." },
+        { hy: "Կապույտ կետի սիրտը մեքենայի չափ է:", en: "A blue whale's heart is the size of a car." },
+        { hy: "Միայնակ մրջյունը կարող է ապրել մինչև 30 տարի:", en: "A queen ant can live up to 30 years." },
+        { hy: "Շոտլանդիայի ազգային կենդանին միաեղջյուրն է:", en: "Scotland's national animal is the unicorn." },
+        { hy: "Մեղուները կարող են ճանաչել մարդկային դեմքերը:", en: "Bees can recognize human faces." },
+        { hy: "Այսբերգների 90%-ը գտնվում է ջրի տակ:", en: "90% of an iceberg is underwater." },
+        { hy: "Մարդու ուղեղը 73% ջուր է:", en: "The human brain is 73% water." },
+        { hy: "Բրազիլիան անվանվել է ծառի տեսակի պատվին:", en: "Brazil is named after a type of tree." },
+        { hy: "Ամենաարագ կենդանին հովազն է (120 կմ/ժ):", en: "The fastest animal is the cheetah (120 km/h)." },
+        { hy: "Ավստրալիայում ավելի շատ կենգուրու կա, քան մարդ:", en: "There are more kangaroos in Australia than people." },
+        { hy: "Միակ մայրցամաքը, որտեղ սողուններ չկան, Անտարկտիդան է:", en: "The only continent with no reptiles is Antarctica." },
+        { hy: "Մարդու ԴՆԹ-ի 50%-ը նման է բանանի ԴՆԹ-ին:", en: "Human DNA is 50% similar to banana DNA." },
+        { hy: "Տորթի վրա մոմ փչելը ավելացնում է բակտերիաները 1400%-ով:", en: "Blowing out candles increases bacteria on cake by 1400%." },
+        { hy: "Մեծ Պատը տիեզերքից անզեն աչքով չի երևում:", en: "The Great Wall is not visible from space with the naked eye." },
+        { hy: "Յուրաքանչյուր մարդ կյանքի ընթացքում աճեցնում է 950 կմ մազ:", en: "The average person grows 950 km of hair in a lifetime." },
+        { hy: "Անգլերենում ամենակարճ լրիվ նախադասությունը 'I am'-ն է:", en: "The shortest complete sentence in English is 'I am'." },
+        { hy: "Ճապոնիայում կա ավելի քան 5 միլիոն վաճառքի ավտոմատ:", en: "There are over 5 million vending machines in Japan." },
+        { hy: "Առաջին iPhone-ը թողարկվել է 2007 թվականին:", en: "The first iPhone was released in 2007." },
+        { hy: "Կոկա-կոլան սկզբում կանաչ էր:", en: "Coca-Cola was originally green." },
+        { hy: "Օրվա ընթացքում մարդը թարթում է մոտ 14,000 անգամ:", en: "The average person blinks about 14,000 times a day." },
+        { hy: "Մարդու ականջները երբեք չեն դադարում աճել:", en: "Human ears never stop growing." },
+        { hy: "Սալվադոր Դալին իր պայմանագրերում նկարում էր, ոչ թե ստորագրում:", en: "Salvador Dalí used to draw on checks instead of signing them." },
+        { hy: "Փղերը միակ կենդանիներն են, որոնք չեն կարող ցատկել:", en: "Elephants are the only animals that cannot jump." },
+        { hy: "Մեղուները մահանում են խայթելուց հետո:", en: "Bees die after they sting." },
+        { hy: "Ամենաերկար բառը անգլերենում ունի 189,819 տառ:", en: "The longest word in English has 189,819 letters." },
+        { hy: "Մոնա Լիզան հոնքեր չունի:", en: "The Mona Lisa has no eyebrows." },
+        { hy: "Սարդերը միջատներ չեն, նրանք հոդվածոտանիներ են:", en: "Spiders are not insects; they are arachnids." },
+        { hy: "Ամենաշատ կղզի ունեցող երկիրը Շվեդիան է (267,000):", en: "Sweden has the most islands of any country (267,000)." },
+        { hy: "Տիեզերագնացները տիեզերքում ավելի են բարձրահասակ դառնում:", en: "Astronauts get taller in space." },
+        { hy: "Սուրճն իրականում հատապտուղ է:", en: "Coffee is actually a berry." },
+        { hy: "Մարդու մարմնի ամենաուժեղ մկանը լեզուն է:", en: "The strongest muscle in the human body is the tongue." },
+        { hy: "Մոծակներն ունեն 47 ատամ:", en: "Mosquitoes have 47 teeth." },
+        { hy: "Կապույտ կետի ձագը օրական խմում է 400 լիտր կաթ:", en: "A blue whale calf drinks 400 liters of milk a day." },
+        { hy: "Արյունը կազմում է մարդու քաշի մոտ 8%-ը:", en: "Blood makes up about 8% of human body weight." },
+        { hy: "Հավերը կարող են ճանաչել ավելի քան 100 դեմք:", en: "Chickens can recognize more than 100 faces." },
+        { hy: "Աշխարհի ամենաթանկ նյութը հակամատերիան է:", en: "The most expensive substance in the world is antimatter." },
+        { hy: "Տիեզերքը հոտ ունի, այն հիշեցնում է տաքացած մետաղ:", en: "Space has a smell; it's like hot metal." },
+        { hy: "Մարդը տարեկան թափում է մոտ 4 կգ մաշկ:", en: "A human sheds about 4 kg of skin cells every year." },
+        { hy: "Որոշ կրիաներ շնչում են իրենց հետույքով:", en: "Some turtles breathe through their butts." },
+        { hy: "Միակ թռչունը, որը կարող է տեսնել կապույտ գույնը, բուն է:", en: "The only bird that can see the color blue is the owl." },
+        { hy: "Ամեն վայրկյան արևը այրում է 600 միլիոն տոննա ջրածին:", en: "Every second, the sun burns 600 million tons of hydrogen." }
+    ];
+
     let winStats = JSON.parse(localStorage.getItem('leMaLuStats')) || {};
     let swapState = { step: 0, initiatorRow: null, initiatorCard: null };
     const armenianNumbers = ["", "մեկ", "երկու", "երեք", "չորս", "հինգ", "վեց", "յոթ", "ութ", "ինը", "տասը"];
@@ -367,7 +496,7 @@
         row.classList.remove('busted');
         row.querySelector('.stop-btn').disabled = false;
         row.querySelector('.remaining-numbers').style.display = "block";
-        updateScores(div);
+        updateScores(row);
     }
 
     function shuffleSpecificPlayerCards(btn) {
@@ -438,17 +567,11 @@
         const container = document.getElementById('players-container');
         let players = Array.from(container.children);
         if (players.length < 2) return;
-
-        // Հիշում ենք հին հերթականությունը
         const oldOrder = players.map(p => p.querySelector('.player-name').value);
         let shuffled;
         let attempts = 0;
-
-        // Փորձում ենք այնքան, մինչև հերթականությունը իսկապես փոխվի
         do {
             shuffled = [...players].sort(() => Math.random() - 0.5);
-            
-            // Smart rearrangement նույն անունների համար
             let result = [];
             let remaining = [...shuffled];
             while (remaining.length > 0) {
@@ -466,11 +589,8 @@
             }
             shuffled = result;
             attempts++;
-            
-            // Ստուգում ենք՝ արդյոք նոր հերթականությունը տարբերվում է հնից
             var newOrder = shuffled.map(p => p.querySelector('.player-name').value);
         } while (JSON.stringify(oldOrder) === JSON.stringify(newOrder) && attempts < 10);
-
         container.innerHTML = '';
         shuffled.forEach(p => container.appendChild(p));
     }
@@ -479,59 +599,52 @@
         const container = document.getElementById('players-container');
         const allRows = Array.from(container.querySelectorAll('.player-row'));
         const activeRows = allRows.filter(p => !p.classList.contains('out'));
-        
         let max = -1;
         activeRows.forEach(p => {
             let s = parseInt(p.querySelector('.score').innerText);
             if(!p.classList.contains('busted') && s <= 29 && s > max) max = s;
         });
-
         if(max === -1) { alert("Ոչ ոք միավոր չունի:"); return; }
-        
         const winners = activeRows.filter(p => !p.classList.contains('busted') && parseInt(p.querySelector('.score').innerText) === max);
-        
         if (winners.length < 2) { 
             alert("Փլեյ-օֆֆի համար անհրաժեշտ է առնվազն 2 հավասար լավագույն միավոր:"); 
             return; 
         }
-
         const losers = allRows.filter(p => !winners.includes(p));
-
         losers.forEach(p => {
             p.classList.add('out');
             const sRow = p.querySelector('.score-row');
             if (sRow) sRow.innerHTML = '<div class="score-info">❌ ԴՈՒՐՍ ՄՆԱՑ</div>';
         });
-
-        // Խառնում ենք հաղթողներին
         winners.sort(() => Math.random() - 0.5);
-
         winners.forEach(p => {
             p.classList.remove('stopped', 'busted', 'out');
             const sRow = p.querySelector('.score-row');
             if (sRow) {
-                sRow.innerHTML = `
-                    <button class="undo-btn" onclick="undoLastMove(this)">↩</button>
-                    <div class="score-info">Ընդհանուր՝ <span class="score">0</span> / 29</div>
-                    <button class="swap-player-btn" onclick="handleSwapClick(this)">🔃</button>
-                `;
+                sRow.innerHTML = `<button class="undo-btn" onclick="undoLastMove(this)">↩</button><div class="score-info">Ընդհանուր՝ <span class="score">0</span> / 29</div><button class="swap-player-btn" onclick="handleSwapClick(this)">🔃</button>`;
             }
             const stopBtn = p.querySelector('.stop-btn');
             if(stopBtn) stopBtn.disabled = false;
             shuffleSpecificPlayerCards(p.querySelector('.shuffle-player-cards-btn'));
         });
-
         container.innerHTML = '';
         winners.forEach(p => container.appendChild(p));
         losers.forEach(p => container.appendChild(p));
-        
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // New Educational Function
+    function showEduFact() {
+        const fact = eduFacts[Math.floor(Math.random() * eduFacts.length)];
+        document.getElementById('edu-hy-text').innerText = fact.hy;
+        document.getElementById('edu-en-text').innerText = fact.en;
+        document.getElementById('edu-overlay').style.display = 'flex';
     }
 
     function stopPlayer(btn) { 
         const row = btn.closest('.player-row');
         row.classList.add('stopped'); 
-        btn.disabled = true; // Այստեղ կոճակը դառնում է "սառած"
+        btn.disabled = true; 
         
         const name = row.querySelector('.player-name').value.trim();
         const scoreVal = parseInt(row.querySelector('.score').innerText);
@@ -539,6 +652,9 @@
         row.querySelector('.remaining-numbers').style.display = "none";
         row.querySelector('.undo-btn').disabled = true;
         if (scoreVal === 29) { winStats[name] = (winStats[name] || 0) + 1; saveStats(); renderStats(); }
+        
+        // Trigger Education Modal
+        showEduFact();
     }
 
     function updateScores(row) {
